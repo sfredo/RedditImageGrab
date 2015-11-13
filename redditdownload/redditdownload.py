@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# coding: utf-8
 """Download images from a reddit.com subreddit."""
 
 import os
@@ -32,8 +33,7 @@ def request(url, *ar, **kwa):
         except Exception as exc:
             if _try == _retries - 1:
                 raise
-            print "Try %r err %r  (%r)" % (
-                _try, exc, url)
+            print "Try %r err %r (%r)" % (_try, exc, url)
         else:
             break
     return res
@@ -338,7 +338,14 @@ def parse_args(args):
     PARSER.add_argument('--mirror-gfycat', default=False, action='store_true', required=False,
                         help='Download available mirror in gfycat.com.')
     PARSER.add_argument('--sort-type', default=None, help='Sort the subreddit.')
-
+    PARSER.add_argument('--width', metavar='w', default=0, type=int, required=False,
+                        help='Minimum width to download.')
+    PARSER.add_argument('--height', metavar='h', default=0, type=int, required=False,
+                        help='Minimum height to download.')
+    PARSER.add_argument('--maxscore', metavar='ms', default=999999, type=int, required=False,
+                        help='Maximum score of images to download.')
+    
+    
     # TODO fix if regex, title contain activated
 
     parsed_argument = PARSER.parse_args(args)
@@ -377,7 +384,7 @@ def main():
     # If a regex has been specified, compile the rule (once)
     RE_RULE = None
     if ARGS.regex:
-        RE_RULE = re.compile(ARGS.regex)
+        RE_RULE = re.compile(ARGS.regex, re.UNICODE)
 
     # compile reddit comment url to check if url is one of them
     reddit_comment_regex = re.compile(r'.*reddit\.com\/r\/(.*?)\/comments')
@@ -417,6 +424,30 @@ def main():
                 print '    Skip:[{}]'.format(ITEM['url'])
                 continue
 
+            # verifies dimensions
+            # title of submission must contain image dimensions in format [ WIDTH x HEIGHT ]
+            # brackets can also be parenthesis and the x may also be special character ×
+            ITEM['title'] = ITEM['title'].replace(u'×', u'x')
+            dim_pattern = re.compile(ur'[\[|\(][0-9]+[ ]*[x|X][ ]*[0-9]+[\]|\)]', re.UNICODE)
+            dim_regex = dim_pattern.search(ITEM['title'])
+            if dim_regex:
+              dimension = dim_regex.group(0).replace('[','').replace(']','').replace('(','').replace(')','').replace(' ','')
+              dimension = re.split('x|×|X',dimension)
+              if len(dimension) == 2:
+                if int(dimension[0]) < ARGS.width or int(dimension[1]) < ARGS.height:
+                  if ARGS.verbose:
+                      print '    DIMENSION: {} is smaller than {}x{}.'.format(ITEM['title'], ARGS.width, ARGS.height)                      
+                  SKIPPED += 1
+                  continue
+                
+            if ITEM['score'] >= ARGS.maxscore:
+                if ARGS.verbose:
+                    print '    SCORE: {} has score of {}'.format(ITEM['id'], ITEM['score'])
+                    'which is higher than maximum score of {}.'.format(ARGS.maxscore)
+
+                SKIPPED += 1
+                continue
+                
             if ITEM['score'] < ARGS.score:
                 if ARGS.verbose:
                     print '    SCORE: {} has score of {}'.format(ITEM['id'], ITEM['score'])

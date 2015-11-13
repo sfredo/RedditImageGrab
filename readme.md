@@ -31,7 +31,10 @@ optional arguments:
                         provide /user/m/multireddit-name as argument
     --last l              ID of the last downloaded file.
     --score s             Minimum score of images to download.
+    --maxscore ms         Maximum score of images to download.
     --num n               Number of images to download.
+    --width w             Minimum width to download.
+    --height h            Minimum height to download.
     --update              Run until you encounter a file already downloaded.
     --sfw                 Download safe for work images only.
     --nsfw                Download NSFW images only.
@@ -80,3 +83,12 @@ Available sorting are following : hot, new, rising, controversial, top, gilded
 'top' and 'controversial' sorting can also be extended using available time limit extension (hour, day, week, month, year, all).
 
 example : tophour, topweek, topweek, controversialhour, controversialweek etc
+
+## Personal examples
+
+Downloading filtered stuff from earthporn
+
+    py -2 redditdl.py earthporn wallpapers --verbose --filename-format title --sort-type topweek --width 1920 --height 1080 --score 200 --sfw --num 5
+    py -2 redditdl.py earthporn wallpapers --verbose --sort-type topweek --width 1920 --height 1080 --score 200 --maxscore 999999 --sfw --num 100
+    py -2 redditdl.py earthporn wallpapers --verbose --sort-type topweek --width 1920 --height 1080 --score 20 --maxscore 999999 --sfw --num 100 --regex '(?i).*moai.*'
+    
